@@ -1,0 +1,16 @@
+<section class="header-mfe">
+  @switch (status()) {
+    @case ('ready') {
+      <vwr-header-mfe></vwr-header-mfe>
+    }
+    @case ('loading') {
+      <p class="header-mfe__status">Loading <code>{{ scriptUrl }}</code>&hellip;</p>
+    }
+    @case ('error') {
+      <p class="header-mfe__status header-mfe__status--error">
+        Could not load <code>{{ scriptUrl }}</code>. Run
+        <code>npm run build:mfe</code> to stage the bundle, then reload.
+      </p>
+    }
+  }
+</section>

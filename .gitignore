@@ -6,6 +6,9 @@
 /out-tsc
 /bazel-out
 
+# vwr-header-mfe bundle staged into the demo app's assets by scripts/stage-mfe.mjs
+/public/vwr-header-mfe
+
 # Node
 /node_modules
 npm-debug.log

@@ -165,6 +165,13 @@ npm run build       # ng build (root app) → dist/aem-embed-demo
 npm test            # ng test (Karma/Jasmine)
 ```
 
+The demo page presents both directions as three tabs: two `fragment-embed`
+tabs (AEM → App) and a third tab that loads the header MFE (App → AEM). That
+third tab needs the `vwr-header-mfe` bundle served alongside the demo, so
+`npm start` and `npm run build` both run `build:mfe` first via npm's
+`prestart`/`prebuild` hooks — see
+[Serving the MFE alongside the demo](#serving-the-mfe-alongside-the-demo).
+
 ---
 
 ## App 2: Header micro-frontend (`projects/vwr-header-mfe`)
@@ -229,6 +236,30 @@ npm run build -- vwr-header-mfe       # → dist/vwr-header-mfe
 npm test -- vwr-header-mfe
 ```
 
+### Serving the MFE alongside the demo
+
+`vwr-header-mfe` is its own `angular.json` build target with its own
+`outputPath` (`dist/vwr-header-mfe`), so it is never part of the
+`aem-embed-demo` bundle. For the demo's third tab to `await import()` the
+*real* bundle — the same thing the `mfe` block does — the artifacts of the two
+independent builds are flattened into one deployable output:
+
+1. `npm run build:mfe` builds the MFE target, then
+   [`scripts/stage-mfe.mjs`](scripts/stage-mfe.mjs) copies
+   `dist/vwr-header-mfe/browser/` into `public/vwr-header-mfe/` (gitignored —
+   it is build output, not source).
+2. `public/` is already an asset input for the root app, so a normal
+   `ng build` emits it at `dist/aem-embed-demo/browser/vwr-header-mfe/main.js`
+   and `ng serve` serves it at `/vwr-header-mfe/main.js`.
+3. The demo panel imports that URL and lets the script's own
+   `customElements.define` side effect register the tag, exactly as the block
+   would.
+
+`prestart` and `prebuild` run step 1 automatically, so plain `npm start` and
+`npm run build` are still the only commands needed. `vercel.json` pins the
+same `buildCommand` (`npm run build`) and the `outputDirectory`
+(`dist/aem-embed-demo/browser`) so the deployment picks up both builds.
+
 ---
 
 ## Repo structure
@@ -238,11 +269,15 @@ npm test -- vwr-header-mfe
 ├── src/                          # Root app: aem-embed-demo (fragment embed demo)
 │   ├── app/
 │   │   ├── hero-fragment/
-│   │   └── card-fragment/
+│   │   ├── card-fragment/
+│   │   ├── header-mfe/           # Loads <vwr-header-mfe> via await import(), like the mfe block
+│   │   └── embed-panel/          # Shared panel: direction badge + "Show embed code" toggle
 │   └── index.html
 ├── public/
 │   └── scripts/
 │       └── fragment-embed.js     # Framework-agnostic <fragment-embed> custom element
+├── scripts/
+│   └── stage-mfe.mjs             # Flattens dist/vwr-header-mfe into public/ for the demo
 ├── projects/
 │   └── vwr-header-mfe/           # Header micro-frontend, built independently
 │       ├── src/
@@ -252,6 +287,7 @@ npm test -- vwr-header-mfe
 │       │   └── main.ts           # Registers <vwr-header-mfe> custom element
 │       └── public/
 ├── angular.json                  # Defines both projects: "aem-embed-demo" (root) and "vwr-header-mfe"
+├── vercel.json                   # buildCommand + outputDirectory for the combined deploy
 └── package.json
 ```
 
@@ -259,10 +295,11 @@ npm test -- vwr-header-mfe
 
 | Command | Effect |
 |---|---|
-| `npm start` | Serves the root demo app (`aem-embed-demo`) at `localhost:4200` |
+| `npm start` | Serves the root demo app (`aem-embed-demo`) at `localhost:4200` (runs `build:mfe` first) |
 | `npm start -- vwr-header-mfe` | Serves the header MFE standalone |
-| `npm run build` | Builds the root app → `dist/aem-embed-demo` |
+| `npm run build` | Builds the root app → `dist/aem-embed-demo` (runs `build:mfe` first) |
 | `npm run build -- vwr-header-mfe` | Builds the header MFE → `dist/vwr-header-mfe` |
+| `npm run build:mfe` | Builds the header MFE and stages it into `public/vwr-header-mfe/` |
 | `npm run watch` | Root app build in watch mode (development config) |
 | `npm test` | Root app unit tests (Karma/Jasmine) |
 | `npm test -- vwr-header-mfe` | Header MFE unit tests |

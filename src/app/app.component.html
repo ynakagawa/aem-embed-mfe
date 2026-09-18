@@ -11,6 +11,13 @@
 </header>
 
 <main class="page">
+  <p class="page-intro">
+    Two apps that solve <strong>opposite directions of the same integration
+    problem</strong>: the first two tabs pull EDS-authored content
+    <em>into</em> this non-EDS app, the third ships this app's UI
+    <em>out</em> as a custom element an AEM DA block loads.
+  </p>
+
   <div class="info-banner">
     <span aria-hidden="true">&#9888;&#65039;</span>
     <span>
@@ -29,7 +36,7 @@
   <div class="tabs" role="tablist" aria-label="Embed examples">
     <button
       type="button"
-      class="tab"
+      class="tab tab--in"
       role="tab"
       id="tab-hero"
       aria-controls="panel-hero"
@@ -42,7 +49,7 @@
     </button>
     <button
       type="button"
-      class="tab"
+      class="tab tab--in"
       role="tab"
       id="tab-card"
       aria-controls="panel-card"
@@ -52,6 +59,19 @@
       (click)="selectTab('card')"
     >
       Second Embed
+    </button>
+    <button
+      type="button"
+      class="tab tab--out"
+      role="tab"
+      id="tab-header-mfe"
+      aria-controls="panel-header-mfe"
+      [class.active]="activeTab() === 'header-mfe'"
+      [attr.aria-selected]="activeTab() === 'header-mfe'"
+      [attr.tabindex]="activeTab() === 'header-mfe' ? 0 : -1"
+      (click)="selectTab('header-mfe')"
+    >
+      Header MFE (Angular Elements)
     </button>
   </div>
 
@@ -64,13 +84,15 @@
   >
     <app-embed-panel
       heading="AEM Fragment Embed"
+      direction="in"
       [code]="heroEmbedCode"
       [codeOpen]="isCodeOpen('hero')"
       (codeToggled)="toggleCode('hero')"
     >
       <p panelDesc class="desc">
-        This panel loads <code>&lt;fragment-embed&gt;</code>, a custom element
-        defined in <code>/scripts/fragment-embed.js</code>, built following the
+        Pulls EDS-authored content <strong>into</strong> this non-EDS app. It
+        loads <code>&lt;fragment-embed&gt;</code>, a custom element defined in
+        <code>/scripts/fragment-embed.js</code>, built following the
         <a href="https://www.aem.live/docs/aem-embed" target="_blank" rel="noopener">aem-embed</a>
         pattern (custom element + Shadow DOM, driven by a single
         <code>url</code> attribute). It fetches the fragment's
@@ -91,18 +113,72 @@
   >
     <app-embed-panel
       heading="Second Embed"
+      direction="in"
       [code]="cardEmbedCode"
       [codeOpen]="isCodeOpen('card')"
       (codeToggled)="toggleCode('card')"
     >
       <p panelDesc class="desc">
-        The same <code>&lt;fragment-embed&gt;</code> element, pointed at a
-        different fragment/block pair to show it's not hero-lab-specific:
+        The same inbound direction, and the same
+        <code>&lt;fragment-embed&gt;</code> element, pointed at a different
+        fragment/block pair to show it's not hero-lab-specific:
         <code>fragments/card-fragment</code> (served from the
         <code>.aem.live</code> domain) using the
         <code>blocks/cards-category</code> block.
       </p>
       <app-card-fragment></app-card-fragment>
+    </app-embed-panel>
+  </section>
+
+  <section
+    class="panel"
+    role="tabpanel"
+    id="panel-header-mfe"
+    aria-labelledby="tab-header-mfe"
+    [hidden]="activeTab() !== 'header-mfe'"
+  >
+    <app-embed-panel
+      heading="Header MFE (Angular Elements)"
+      direction="out"
+      [code]="headerMfeEmbedCode"
+      [codeOpen]="isCodeOpen('header-mfe')"
+      (codeToggled)="toggleCode('header-mfe')"
+    >
+      <div panelDesc>
+        <p class="desc">
+          The opposite direction: this ships an app-built UI <strong>out</strong>
+          as a custom element that an AEM DA <code>mfe</code> block loads.
+          <code>projects/vwr-header-mfe</code> is a standalone, zoneless Angular
+          Elements bundle that registers <code>&lt;vwr-header-mfe&gt;</code>. It
+          is a separate build target
+          (<code>npm run build -- vwr-header-mfe</code> &rarr;
+          <code>dist/vwr-header-mfe/browser/main.js</code>) and is meant to be
+          <code>await import()</code>ed by that block, not by this workspace's
+          own app. If you want a Spartacus-style header or footer inside AEM,
+          this is the sample to copy.
+        </p>
+        <p class="desc">
+          Two non-obvious contracts make it work. The block does
+          <code>await import(scriptUrl)</code> and <em>then</em> immediately
+          <code>document.createElement(tagName)</code>, so
+          <code>customElements.define</code> must already have run when the
+          import promise resolves &mdash; which is why
+          <code>main.ts</code> uses <strong>top-level await</strong> rather than
+          a fire-and-forget <code>(async () =&gt; {{ '{' }}&hellip;{{ '}' }})()</code>,
+          since a dynamic import resolves on top-level execution and does not
+          wait for an async IIFE's internal awaits. It also guards registration
+          with <code>if (!customElements.get(TAG_NAME))</code> so a second
+          import is a harmless no-op instead of a duplicate-definition error.
+        </p>
+        <p class="desc">
+          The preview below is the real bundle: this panel
+          <code>await import()</code>s the same <code>main.js</code> the block
+          would. Design tokens (fonts, colors, spacing) are inherited from the
+          host page when embedded in the real vwr site, so here &mdash; with no
+          host page defining them &mdash; it renders deliberately plain.
+        </p>
+      </div>
+      <app-header-mfe></app-header-mfe>
     </app-embed-panel>
   </section>
 </main>
