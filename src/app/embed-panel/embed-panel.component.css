@@ -2,6 +2,35 @@
   display: block;
 }
 
+.direction-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 11px;
+}
+
+.direction-badge__arrow {
+  background: #eaf0fb;
+  color: #0033a0;
+  border: 1px solid #c3d3f0;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.direction-badge--out .direction-badge__arrow {
+  background: #e4f7f4;
+  color: #007a6e;
+  border-color: #9fdcd4;
+}
+
+.direction-badge__hint {
+  color: #6b6b6b;
+}
+
 h2 {
   margin: 0 0 4px;
   font-size: 18px;

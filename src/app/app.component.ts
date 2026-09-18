@@ -1,13 +1,19 @@
 import { Component, signal } from '@angular/core';
 import { HeroFragmentComponent } from './hero-fragment/hero-fragment.component';
 import { CardFragmentComponent } from './card-fragment/card-fragment.component';
+import { HeaderMfeComponent } from './header-mfe/header-mfe.component';
 import { EmbedPanelComponent } from './embed-panel/embed-panel.component';
 
-type TabId = 'hero' | 'card';
+type TabId = 'hero' | 'card' | 'header-mfe';
 
 @Component({
   selector: 'app-root',
-  imports: [HeroFragmentComponent, CardFragmentComponent, EmbedPanelComponent],
+  imports: [
+    HeroFragmentComponent,
+    CardFragmentComponent,
+    HeaderMfeComponent,
+    EmbedPanelComponent,
+  ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
@@ -22,6 +28,7 @@ export class AppComponent {
   private readonly codeOpen = signal<Record<TabId, boolean>>({
     hero: false,
     card: false,
+    'header-mfe': false,
   });
 
   readonly heroEmbedCode = `<script src="https://aem-embed-mfe.vercel.app/scripts/fragment-embed.js" type="module"></script>
@@ -29,6 +36,22 @@ export class AppComponent {
 
   readonly cardEmbedCode = `<script src="https://aem-embed-mfe.vercel.app/scripts/fragment-embed.js" type="module"></script>
 <fragment-embed url="https://main--vwr--ynaka-adobe.aem.live/us/en/fragments/card-fragment"></fragment-embed>`;
+
+  readonly headerMfeEmbedCode = `<!-- Built with: npm run build -- vwr-header-mfe  ->  dist/vwr-header-mfe/browser/main.js
+     Host main.js (plus any sibling chunks) somewhere the AEM DA page can reach,
+     then point the mfe block's _mfe.json at it:
+       "Script URL": https://YOUR_HOST/vwr-header-mfe/main.js
+       "Tag Name":   vwr-header-mfe -->
+
+<!-- What the mfe block effectively does at runtime: -->
+<script type="module">
+  await import('https://YOUR_HOST/vwr-header-mfe/main.js');
+  document.body.prepend(document.createElement('vwr-header-mfe'));
+</script>
+
+<!-- Equivalent plain-HTML form: -->
+<script type="module" src="https://YOUR_HOST/vwr-header-mfe/main.js"></script>
+<vwr-header-mfe></vwr-header-mfe>`;
 
   selectTab(tab: TabId): void {
     this.activeTab.set(tab);

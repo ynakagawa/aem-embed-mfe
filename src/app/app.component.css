@@ -49,6 +49,17 @@
   line-height: 1.5;
 }
 
+.page-intro {
+  margin: 0 0 20px;
+  font-size: 14px;
+  color: #43506b;
+  max-width: 72ch;
+}
+
+.page-intro strong {
+  color: #1a1a1a;
+}
+
 .info-banner {
   background: #fffbeb;
   border: 1px solid #f0c869;
@@ -92,7 +103,20 @@
 
 .tab.active {
   color: #1a1a1a;
+}
+
+/* Inbound (AEM -> App) tabs share the blue accent; the outbound (App -> AEM)
+   tab uses the teal secondary, matching its panel's direction badge. */
+.tab--in.active {
   border-bottom-color: var(--vwr-blue);
+}
+
+.tab--out.active {
+  border-bottom-color: var(--vwr-teal);
+}
+
+.tab--out:hover {
+  color: #007a6e;
 }
 
 .panel[hidden] {

@@ -3,8 +3,11 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
+    "prestart": "npm run build:mfe",
     "start": "ng serve",
+    "prebuild": "npm run build:mfe",
     "build": "ng build",
+    "build:mfe": "ng build vwr-header-mfe && node scripts/stage-mfe.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
