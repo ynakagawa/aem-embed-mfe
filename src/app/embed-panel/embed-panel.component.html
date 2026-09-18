@@ -1,0 +1,21 @@
+<h2>{{ heading() }}</h2>
+
+<ng-content select="[panelDesc]"></ng-content>
+
+<button
+  type="button"
+  class="embed-toggle"
+  [class.active]="codeOpen()"
+  [attr.aria-expanded]="codeOpen()"
+  (click)="codeToggled.emit()"
+>
+  {{ codeOpen() ? 'Hide embed code' : 'Show embed code' }}
+</button>
+
+@if (codeOpen()) {
+  <pre class="embed-code">{{ code() }}</pre>
+}
+
+<div class="widget-preview">
+  <ng-content></ng-content>
+</div>
