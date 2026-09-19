@@ -211,6 +211,78 @@ element tag), not by this workspace's app itself.
   [`nav-data.ts`](projects/vwr-header-mfe/src/app/nav-data.ts) (`NAV_SECTIONS`,
   `SITE_ORIGIN`). Behavior mirrors the source site's own header
   block (open/close breakpoint, outside-click and Escape-to-close handling).
+- All user-facing words in the header come from a labels object
+  ([`labels.ts`](projects/vwr-header-mfe/src/app/labels.ts)), so the element can
+  be localized by the AEM DA block that mounts it — see
+  [Localized labels](#localized-labels-the-labels-contract).
+
+### Localized labels (the `labels` contract)
+
+**Input name:** `labels` — exposed both as an **attribute** (JSON string) and as
+a **property** (already-parsed object) on `<vwr-header-mfe>`. Shape: a flat
+object of `string` values, exactly what an AEM DA JSON sheet row (`data[0]`)
+looks like.
+
+```js
+// In the AEM DA `mfe` block, after fetching the labels sheet:
+const sheet = await (await fetch('/us/fr/nav-labels.json')).json();
+const el = document.createElement('vwr-header-mfe');
+
+// Attribute form (JSON string) …
+el.setAttribute('labels', JSON.stringify(sheet.data[0]));
+// … or property form (object) - equivalent:
+el.labels = sheet.data[0];
+
+block.append(el);
+```
+
+Or declaratively in markup:
+
+```html
+<vwr-header-mfe labels='{"login":"Connexion","register":"Créer un compte"}'></vwr-header-mfe>
+```
+
+Expected JSON shape (every key optional; the value shown is the English
+default used when the key is absent):
+
+```json
+{
+  "openNavigation": "Open navigation",
+  "closeNavigation": "Close navigation",
+  "brandAlt": "VWR, part of Avantor",
+  "searchPlaceholder": "Search by keyword, supplier, or part number",
+  "search": "Search",
+  "askAi": "Ask AI",
+  "login": "Login",
+  "register": "Register",
+  "account": "Account",
+  "country": "United States",
+  "countryPrefix": "Country",
+  "allCategories": "All Categories",
+  "orderEntry": "Order Entry",
+  "cart": "Cart",
+  "cartSubtotal": "$0.00",
+  "nav./us/en/products": "Products",
+  "nav./us/en/products/chemicals": "Chemicals"
+}
+```
+
+- `countryPrefix` + `country` compose the country button's `aria-label`
+  (`"Country: United States"` → `"Pays: France"`).
+- **Nav entries** are overridden per link by its href path, using flat
+  `nav.<href>` columns — the realistic DA sheet shape, where a row is a set of
+  named string columns. The same overrides may also be passed as a nested
+  object (`{ "nav": { "/us/en/products": "Produits" } }`) by hosts that can
+  send richer JSON. Hrefs not listed keep their `nav-data.ts` label.
+
+Tolerance rules (`normalizeLabels` in `labels.ts`, covered by
+`labels.spec.ts`):
+
+- Missing, `null`, empty, or malformed JSON → English defaults, no throw.
+- Unknown keys, non-string values, and blank/whitespace values are ignored.
+- A whole sheet (`{ "data": [ { ... } ] }`) or bare array is unwrapped to its
+  first row, so passing the raw sheet also works.
+- Supplying no `labels` at all leaves the header byte-for-byte as before.
 
 ### Integrating this into the AEM DA project
 
@@ -227,6 +299,9 @@ element tag), not by this workspace's app itself.
    differs) to match the target site before building, if this is being
    pointed at a different environment/domain than what's currently
    hardcoded.
+5. For a non-English locale, author a DA labels sheet and pass its `data[0]`
+   row into the element as the `labels` attribute/property — see
+   [Localized labels](#localized-labels-the-labels-contract).
 
 ### Run / build / test
 
@@ -283,6 +358,7 @@ same `buildCommand` (`npm run build`) and the `outputDirectory`
 │       ├── src/
 │       │   ├── app/
 │       │   │   ├── vwr-header.component.ts
+│       │   │   ├── labels.ts        # `labels` input contract + English defaults
 │       │   │   └── nav-data.ts
 │       │   └── main.ts           # Registers <vwr-header-mfe> custom element
 │       └── public/
