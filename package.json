@@ -7,6 +7,7 @@
     "start": "ng serve",
     "prebuild": "npm run build:mfe",
     "build": "ng build",
+    "vercel-build": "npm run build:mfe && ng build && node scripts/verify-mfe.mjs",
     "build:mfe": "ng build vwr-header-mfe && node scripts/stage-mfe.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
