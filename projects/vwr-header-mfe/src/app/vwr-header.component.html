@@ -13,9 +13,9 @@
       </div>
 
       <div class="nav-brand">
-        <a [href]="absoluteHref('/us/en')">
+        <a [href]="href('/us/en')">
           <img
-            [src]="absoluteHref('/media_1edca0f44c1b0baad1c16408809c939d521427a4f.svg')"
+            [src]="href('/media_1edca0f44c1b0baad1c16408809c939d521427a4f.svg')"
             [attr.alt]="t().brandAlt"
             width="200"
             height="47"
@@ -41,9 +41,9 @@
 
       <div class="nav-utility">
         <div class="nav-auth-links">
-          <a [href]="absoluteHref('/us/en/login')">{{ t().login }}</a>
+          <a [href]="href('/us/en/login')">{{ t().login }}</a>
           <span class="nav-auth-links__sep">/</span>
-          <a [href]="absoluteHref('/us/en/registration-account-type')">{{ t().register }}</a>
+          <a [href]="href('/us/en/registration-account-type')">{{ t().register }}</a>
         </div>
         <button type="button" class="nav-account" [attr.aria-label]="t().account"></button>
         <div class="nav-country-switcher" [class.active]="countryOpen()">
@@ -63,7 +63,7 @@
             @for (country of countryOptions(); track country.path) {
               <li>
                 <a
-                  [href]="absoluteHref(country.path)"
+                  [href]="countryHref(country)"
                   [attr.aria-current]="isCurrentCountry(country) ? 'true' : null"
                   [class.is-current]="isCurrentCountry(country)"
                 >
@@ -82,7 +82,7 @@
             <li class="nav-drop" [class.active]="openSectionHref() === section.href">
               <p>
                 <a
-                  [href]="absoluteHref(section.href)"
+                  [href]="href(section.href)"
                   [attr.aria-expanded]="openSectionHref() === section.href"
                   (click)="toggleSection(section, $event)"
                 >{{ section.label }}</a>
@@ -97,7 +97,7 @@
                   <div class="submenu-col">
                     <ul>
                       @for (item of section.items; track item.href) {
-                        <li><a [href]="absoluteHref(item.href)">{{ item.label }}</a></li>
+                        <li><a [href]="href(item.href)">{{ item.label }}</a></li>
                       }
                     </ul>
                   </div>
@@ -109,7 +109,7 @@
       </div>
 
       <div class="nav-tools">
-        <a class="nav-order-entry" [href]="absoluteHref('/us/en/my-account/quick-order')">{{ t().orderEntry }}</a>
+        <a class="nav-order-entry" [href]="href('/us/en/my-account/quick-order')">{{ t().orderEntry }}</a>
         <button type="button" class="nav-cart-button" [attr.aria-label]="t().cart"></button>
         <span class="nav-cart-subtotal">{{ t().cartSubtotal }}</span>
       </div>

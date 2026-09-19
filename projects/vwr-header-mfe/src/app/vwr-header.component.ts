@@ -17,6 +17,10 @@ import { DEFAULT_LABELS, HeaderLabels, normalizeLabels } from './labels';
 // mega menu opens/closes on click above this width, becomes an accordion below it.
 const DESKTOP_BREAKPOINT = '(min-width: 900px)';
 
+// Locale the nav data is authored against. Links carrying this prefix get
+// rebased onto whichever locale the reader is currently in.
+const SOURCE_LOCALE = '/us/en';
+
 @Component({
   selector: 'app-vwr-header',
   standalone: true,
@@ -30,10 +34,23 @@ export class VwrHeaderComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly isDesktop = window.matchMedia(DESKTOP_BREAKPOINT);
 
-  readonly siteOrigin = SITE_ORIGIN;
   readonly mobileOpen = signal(false);
   readonly openSectionHref = signal<string | null>(null);
   readonly countryOpen = signal(false);
+
+  /**
+   * Origin that links are resolved against. Empty by default so hrefs stay
+   * same-origin and the header keeps the reader on whichever domain is serving
+   * the page (aem.live, aem.page or a production hostname). A host that embeds
+   * this widget cross-origin - the standalone demo shell - sets `origin` to
+   * point links back at the content site.
+   */
+  private readonly originState = signal('');
+
+  @Input()
+  set origin(value: string | null | undefined) {
+    this.originState.set(typeof value === 'string' ? value.trim().replace(/\/$/, '') : '');
+  }
 
   private readonly labelsState = signal<HeaderLabels>(DEFAULT_LABELS);
 
@@ -136,6 +153,20 @@ export class VwrHeaderComponent {
     return country.path === this.currentCountry().path;
   }
 
+  /**
+   * Href for a country option. The path below the locale root is carried over
+   * so switching country keeps the reader on the page they were reading -
+   * /jp/suppliers goes to /us/en/suppliers, not back to the locale home. Not
+   * rebased: the target locale is already explicit in the option.
+   */
+  countryHref(country: CountryOption): string {
+    const current = this.currentCountry();
+    const path = this.pathname();
+    const inCurrentLocale = path === current.path || path.startsWith(`${current.path}/`);
+    const remainder = inCurrentLocale ? path.slice(current.path.length).replace(/\/$/, '') : '';
+    return `${this.originState()}${country.path}${remainder}`;
+  }
+
   constructor() {
     const onViewportChange = () => {
       this.mobileOpen.set(false);
@@ -145,12 +176,26 @@ export class VwrHeaderComponent {
     this.destroyRef.onDestroy(() => this.isDesktop.removeEventListener('change', onViewportChange));
   }
 
-  absoluteHref(path: string): string {
-    return `${this.siteOrigin}${path}`;
+  /**
+   * Resolve a link authored against the source locale. The `/us/en` prefix is
+   * swapped for whichever locale the reader is in, so the header does not send
+   * a visitor on /jp back into English pages. Non locale-scoped paths (such as
+   * the logo asset) pass through untouched.
+   */
+  href(path: string): string {
+    return `${this.originState()}${this.rebase(path)}`;
+  }
+
+  private rebase(path: string): string {
+    const base = this.currentCountry().path;
+    if (base === SOURCE_LOCALE) return path;
+    if (path === SOURCE_LOCALE) return base;
+    if (path.startsWith(`${SOURCE_LOCALE}/`)) return `${base}${path.slice(SOURCE_LOCALE.length)}`;
+    return path;
   }
 
   searchAction(): string {
-    return `${this.siteOrigin}/us/en/search`;
+    return this.href(`${SOURCE_LOCALE}/search`);
   }
 
   toggleMobileMenu(): void {

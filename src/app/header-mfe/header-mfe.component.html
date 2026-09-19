@@ -1,7 +1,7 @@
 <section class="header-mfe">
   @switch (status()) {
     @case ('ready') {
-      <vwr-header-mfe></vwr-header-mfe>
+      <vwr-header-mfe [attr.origin]="contentOrigin"></vwr-header-mfe>
     }
     @case ('loading') {
       <p class="header-mfe__status">Loading <code>{{ scriptUrl }}</code>&hellip;</p>
