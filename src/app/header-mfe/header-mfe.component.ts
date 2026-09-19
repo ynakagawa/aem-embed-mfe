@@ -1,4 +1,5 @@
 import { CUSTOM_ELEMENTS_SCHEMA, Component, OnInit, signal } from '@angular/core';
+import { SITE_ORIGIN } from '../../../projects/vwr-header-mfe/src/app/nav-data';
 
 // Same two values an AEM DA `mfe` block is configured with (its _mfe.json
 // "Tag Name" field, plus the script URL it loads).
@@ -15,6 +16,11 @@ const SCRIPT_URL = '/vwr-header-mfe/main.js';
 export class HeaderMfeComponent implements OnInit {
   readonly status = signal<'loading' | 'ready' | 'error'>('loading');
   readonly scriptUrl = SCRIPT_URL;
+
+  // This shell is served from a different origin than the content site, so
+  // relative links would 404 here. Real embeds on the content domain leave
+  // `origin` unset and stay same-origin.
+  readonly contentOrigin = SITE_ORIGIN;
 
   async ngOnInit(): Promise<void> {
     if (customElements.get(TAG_NAME)) {
