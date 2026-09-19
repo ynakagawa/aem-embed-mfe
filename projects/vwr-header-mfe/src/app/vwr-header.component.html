@@ -5,7 +5,7 @@
         <button
           type="button"
           [attr.aria-expanded]="mobileOpen()"
-          [attr.aria-label]="mobileOpen() ? 'Close navigation' : 'Open navigation'"
+          [attr.aria-label]="mobileOpen() ? t().closeNavigation : t().openNavigation"
           (click)="toggleMobileMenu()"
         >
           <span class="nav-hamburger-icon"></span>
@@ -16,7 +16,7 @@
         <a [href]="absoluteHref('/us/en')">
           <img
             [src]="absoluteHref('/media_1edca0f44c1b0baad1c16408809c939d521427a4f.svg')"
-            alt="VWR, part of Avantor"
+            [attr.alt]="t().brandAlt"
             width="200"
             height="47"
           />
@@ -29,44 +29,44 @@
             type="search"
             name="q"
             class="nav-search-bar__input"
-            placeholder="Search by keyword, supplier, or part number"
-            aria-label="Search"
+            [attr.placeholder]="t().searchPlaceholder"
+            [attr.aria-label]="t().search"
           />
-          <button type="submit" class="nav-search-bar__submit" aria-label="Search"></button>
+          <button type="submit" class="nav-search-bar__submit" [attr.aria-label]="t().search"></button>
         </div>
-        <button type="button" class="nav-search-bar__ai" aria-label="Ask AI">
-          <span class="nav-search-bar__ai-icon" aria-hidden="true"></span>Ask AI
+        <button type="button" class="nav-search-bar__ai" [attr.aria-label]="t().askAi">
+          <span class="nav-search-bar__ai-icon" aria-hidden="true"></span>{{ t().askAi }}
         </button>
       </form>
 
       <div class="nav-utility">
         <div class="nav-auth-links">
-          <a [href]="absoluteHref('/us/en/login')">Login</a>
+          <a [href]="absoluteHref('/us/en/login')">{{ t().login }}</a>
           <span class="nav-auth-links__sep">/</span>
-          <a [href]="absoluteHref('/us/en/registration-account-type')">Register</a>
+          <a [href]="absoluteHref('/us/en/registration-account-type')">{{ t().register }}</a>
         </div>
-        <button type="button" class="nav-account" aria-label="Account"></button>
-        <button type="button" class="nav-country" aria-label="Country: United States">
+        <button type="button" class="nav-account" [attr.aria-label]="t().account"></button>
+        <button type="button" class="nav-country" [attr.aria-label]="countryAriaLabel()">
           <span class="nav-country__flag" aria-hidden="true"></span>
-          <span class="nav-country__label">United States</span>
+          <span class="nav-country__label">{{ t().country }}</span>
           <span class="nav-country__caret" aria-hidden="true"></span>
         </button>
       </div>
 
       <div class="nav-sections">
         <ul>
-          @for (section of navSections; track section.label) {
-            <li class="nav-drop" [class.active]="openSectionLabel() === section.label">
+          @for (section of navSections(); track section.href) {
+            <li class="nav-drop" [class.active]="openSectionHref() === section.href">
               <p>
                 <a
                   [href]="absoluteHref(section.href)"
-                  [attr.aria-expanded]="openSectionLabel() === section.label"
+                  [attr.aria-expanded]="openSectionHref() === section.href"
                   (click)="toggleSection(section, $event)"
                 >{{ section.label }}</a>
               </p>
               <div class="submenu-wrapper">
                 <div class="submenu-header">
-                  <h5 class="back-link" (click)="closeMegaMenu()">All Categories</h5>
+                  <h5 class="back-link" (click)="closeMegaMenu()">{{ t().allCategories }}</h5>
                   <hr />
                 </div>
                 <h6 class="submenu-title">{{ section.label }}</h6>
@@ -86,11 +86,11 @@
       </div>
 
       <div class="nav-tools">
-        <a class="nav-order-entry" [href]="absoluteHref('/us/en/my-account/quick-order')">Order Entry</a>
-        <button type="button" class="nav-cart-button" aria-label="Cart"></button>
-        <span class="nav-cart-subtotal">$0.00</span>
+        <a class="nav-order-entry" [href]="absoluteHref('/us/en/my-account/quick-order')">{{ t().orderEntry }}</a>
+        <button type="button" class="nav-cart-button" [attr.aria-label]="t().cart"></button>
+        <span class="nav-cart-subtotal">{{ t().cartSubtotal }}</span>
       </div>
     </nav>
   </div>
-  <div class="overlay" [class.show]="openSectionLabel() !== null" (click)="closeMegaMenu()"></div>
+  <div class="overlay" [class.show]="openSectionHref() !== null" (click)="closeMegaMenu()"></div>
 </header>
