@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { VwrHeaderComponent } from './vwr-header.component';
 import { DEFAULT_LABELS } from './labels';
+import { COUNTRIES } from './nav-data';
 
 function shadowText(fixture: ComponentFixture<VwrHeaderComponent>, selector: string): string {
   const root = (fixture.nativeElement as HTMLElement).shadowRoot ?? (fixture.nativeElement as HTMLElement);
@@ -53,5 +54,78 @@ describe('VwrHeaderComponent labels', () => {
     fixture.detectChanges();
     const root = (fixture.nativeElement as HTMLElement).shadowRoot!;
     expect(root.querySelector('.nav-country')?.getAttribute('aria-label')).toBe('Pays: France');
+  });
+});
+
+describe('VwrHeaderComponent country switcher', () => {
+  let fixture: ComponentFixture<VwrHeaderComponent>;
+
+  function root(): ShadowRoot {
+    return (fixture.nativeElement as HTMLElement).shadowRoot!;
+  }
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [VwrHeaderComponent] }).compileComponents();
+    fixture = TestBed.createComponent(VwrHeaderComponent);
+  });
+
+  it('lists every configured country as a link to its locale root', () => {
+    fixture.detectChanges();
+    const links = Array.from(root().querySelectorAll<HTMLAnchorElement>('.nav-country__menu a'));
+    expect(links.length).toBe(COUNTRIES.length);
+    expect(links.map((a) => a.textContent!.trim())).toEqual(['United States', 'Japan', 'Germany']);
+    expect(links.map((a) => new URL(a.href).pathname)).toEqual(['/us/en', '/jp', '/de']);
+  });
+
+  it('is collapsed until toggled and reports state via aria-expanded', () => {
+    fixture.detectChanges();
+    const button = root().querySelector<HTMLButtonElement>('.nav-country')!;
+    const menu = root().querySelector<HTMLElement>('.nav-country__menu')!;
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(menu.hidden).toBeTrue();
+
+    button.click();
+    fixture.detectChanges();
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    expect(menu.hidden).toBeFalse();
+  });
+
+  it('selects the active country from the path, including nested pages', () => {
+    fixture.componentInstance.path = '/jp/home';
+    fixture.detectChanges();
+    expect(shadowText(fixture, '.nav-country__label')).toBe('Japan');
+    expect(root().querySelector('.nav-country__menu a.is-current')?.textContent?.trim()).toBe('Japan');
+  });
+
+  it('defaults to the first country when the path matches no locale', () => {
+    fixture.componentInstance.path = '/somewhere/else';
+    fixture.detectChanges();
+    expect(shadowText(fixture, '.nav-country__label')).toBe('United States');
+  });
+
+  it('applies per-locale country name overrides from labels', () => {
+    fixture.componentInstance.path = '/jp';
+    fixture.componentInstance.labels = { 'country./jp': '日本', 'country./de': 'Deutschland' };
+    fixture.detectChanges();
+    expect(shadowText(fixture, '.nav-country__label')).toBe('日本');
+    const links = Array.from(root().querySelectorAll('.nav-country__menu a'));
+    expect(links.map((a) => a.textContent!.trim())).toEqual(['United States', '日本', 'Deutschland']);
+  });
+
+  it('closes on Escape and on a click outside the header', () => {
+    fixture.detectChanges();
+    const button = root().querySelector<HTMLButtonElement>('.nav-country')!;
+
+    button.click();
+    fixture.detectChanges();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+
+    button.click();
+    fixture.detectChanges();
+    document.body.click();
+    fixture.detectChanges();
+    expect(button.getAttribute('aria-expanded')).toBe('false');
   });
 });

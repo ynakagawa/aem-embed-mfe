@@ -5,6 +5,22 @@
 // problems this demo already covers in the other direction).
 export const SITE_ORIGIN = 'https://main--vwr--ynaka-adobe.aem.live';
 
+/** A locale the country switcher can navigate to. */
+export interface CountryOption {
+  /** English display name; override per locale with a `country.<path>` label. */
+  label: string;
+  /** Locale root path. English lives under /us/en; others under /<language>. */
+  path: string;
+  /** Used for the flag modifier class. */
+  code: string;
+}
+
+export const COUNTRIES: CountryOption[] = [
+  { label: 'United States', path: '/us/en', code: 'us' },
+  { label: 'Japan', path: '/jp', code: 'jp' },
+  { label: 'Germany', path: '/de', code: 'de' },
+];
+
 export interface NavLink {
   label: string;
   href: string;

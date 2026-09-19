@@ -28,6 +28,8 @@ export interface HeaderLabels {
   cartSubtotal: string;
   /** Per-nav-entry overrides, keyed by the entry's href path. */
   nav: Record<string, string>;
+  /** Country-switcher overrides, keyed by the locale root path (e.g. `/jp`). */
+  countries: Record<string, string>;
 }
 
 export const DEFAULT_LABELS: HeaderLabels = {
@@ -47,16 +49,21 @@ export const DEFAULT_LABELS: HeaderLabels = {
   cart: 'Cart',
   cartSubtotal: '$0.00',
   nav: {},
+  countries: {},
 };
 
 const TEXT_KEYS = (Object.keys(DEFAULT_LABELS) as (keyof HeaderLabels)[]).filter(
-  (key) => key !== 'nav',
-) as Exclude<keyof HeaderLabels, 'nav'>[];
+  (key) => key !== 'nav' && key !== 'countries',
+) as Exclude<keyof HeaderLabels, 'nav' | 'countries'>[];
 
 // DA sheets are flat key/value rows, so nav overrides arrive as columns named
 // `nav./us/en/products`. A nested `{ "nav": { "/us/en/products": "..." } }`
 // object is accepted too, for hosts that can pass richer JSON.
 const NAV_KEY_PREFIX = 'nav.';
+// Country-switcher overrides arrive as columns named `country./jp`. Note this
+// prefix includes the dot, so it cannot collide with the `country` or
+// `countryPrefix` text keys.
+const COUNTRY_KEY_PREFIX = 'country.';
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -94,7 +101,11 @@ function toRecord(input: unknown): Record<string, unknown> | null {
  */
 export function normalizeLabels(input: unknown): HeaderLabels {
   const raw = toRecord(input);
-  const merged: HeaderLabels = { ...DEFAULT_LABELS, nav: { ...DEFAULT_LABELS.nav } };
+  const merged: HeaderLabels = {
+    ...DEFAULT_LABELS,
+    nav: { ...DEFAULT_LABELS.nav },
+    countries: { ...DEFAULT_LABELS.countries },
+  };
   if (!raw) return merged;
 
   for (const key of TEXT_KEYS) {
@@ -111,10 +122,21 @@ export function normalizeLabels(input: unknown): HeaderLabels {
     }
   }
 
+  const nestedCountries = raw['countries'];
+  if (isPlainObject(nestedCountries)) {
+    for (const [path, value] of Object.entries(nestedCountries)) {
+      if (typeof value === 'string' && value.trim()) merged.countries[path] = value.trim();
+    }
+  }
+
   for (const [key, value] of Object.entries(raw)) {
-    if (!key.startsWith(NAV_KEY_PREFIX)) continue;
-    const href = key.slice(NAV_KEY_PREFIX.length);
-    if (href && typeof value === 'string' && value.trim()) merged.nav[href] = value.trim();
+    if (key.startsWith(NAV_KEY_PREFIX)) {
+      const href = key.slice(NAV_KEY_PREFIX.length);
+      if (href && typeof value === 'string' && value.trim()) merged.nav[href] = value.trim();
+    } else if (key.startsWith(COUNTRY_KEY_PREFIX)) {
+      const path = key.slice(COUNTRY_KEY_PREFIX.length);
+      if (path && typeof value === 'string' && value.trim()) merged.countries[path] = value.trim();
+    }
   }
 
   return merged;

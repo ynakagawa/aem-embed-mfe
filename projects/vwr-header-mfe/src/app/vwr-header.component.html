@@ -46,11 +46,34 @@
           <a [href]="absoluteHref('/us/en/registration-account-type')">{{ t().register }}</a>
         </div>
         <button type="button" class="nav-account" [attr.aria-label]="t().account"></button>
-        <button type="button" class="nav-country" [attr.aria-label]="countryAriaLabel()">
-          <span class="nav-country__flag" aria-hidden="true"></span>
-          <span class="nav-country__label">{{ t().country }}</span>
-          <span class="nav-country__caret" aria-hidden="true"></span>
-        </button>
+        <div class="nav-country-switcher" [class.active]="countryOpen()">
+          <button
+            type="button"
+            class="nav-country"
+            [attr.aria-label]="countryAriaLabel()"
+            [attr.aria-expanded]="countryOpen()"
+            aria-haspopup="true"
+            (click)="toggleCountryMenu()"
+          >
+            <span class="nav-country__flag" [class]="'nav-country__flag--' + currentCountry().code" aria-hidden="true"></span>
+            <span class="nav-country__label">{{ currentCountryLabel() }}</span>
+            <span class="nav-country__caret" aria-hidden="true"></span>
+          </button>
+          <ul class="nav-country__menu" [attr.aria-label]="t().countryPrefix" [hidden]="!countryOpen()">
+            @for (country of countryOptions(); track country.path) {
+              <li>
+                <a
+                  [href]="absoluteHref(country.path)"
+                  [attr.aria-current]="isCurrentCountry(country) ? 'true' : null"
+                  [class.is-current]="isCurrentCountry(country)"
+                >
+                  <span class="nav-country__flag" [class]="'nav-country__flag--' + country.code" aria-hidden="true"></span>
+                  <span>{{ country.label }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+        </div>
       </div>
 
       <div class="nav-sections">
