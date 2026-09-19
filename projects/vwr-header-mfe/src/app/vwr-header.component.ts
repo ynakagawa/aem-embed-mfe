@@ -10,7 +10,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { NAV_SECTIONS, SITE_ORIGIN, NavSection } from './nav-data';
+import { NAV_SECTIONS, SITE_ORIGIN, COUNTRIES, CountryOption, NavSection } from './nav-data';
 import { DEFAULT_LABELS, HeaderLabels, normalizeLabels } from './labels';
 
 // Matches the real header's own behaviour (see vwr blocks/header/header.js):
@@ -33,8 +33,24 @@ export class VwrHeaderComponent {
   readonly siteOrigin = SITE_ORIGIN;
   readonly mobileOpen = signal(false);
   readonly openSectionHref = signal<string | null>(null);
+  readonly countryOpen = signal(false);
 
   private readonly labelsState = signal<HeaderLabels>(DEFAULT_LABELS);
+
+  /**
+   * Pathname used to decide which locale is active. Defaults to the embedding
+   * page's path; the `path` input exists so the value can be supplied
+   * explicitly (tests, or a host that routes without changing location).
+   */
+  private readonly pathnameState = signal(window.location.pathname);
+  readonly pathname = this.pathnameState.asReadonly();
+
+  @Input()
+  set path(value: string | null | undefined) {
+    if (typeof value === 'string' && value.trim()) {
+      this.pathnameState.set(value.trim());
+    }
+  }
 
   /**
    * Locale-specific labels, as the `labels` attribute (a JSON string, which is
@@ -68,7 +84,56 @@ export class VwrHeaderComponent {
 
   countryAriaLabel(): string {
     const labels = this.labelsState();
-    return `${labels.countryPrefix}: ${labels.country}`;
+    return `${labels.countryPrefix}: ${this.currentCountryLabel()}`;
+  }
+
+  /**
+   * The locale the page is currently in, matched against the pathname. The
+   * longest matching path wins so `/us/en` is not shadowed by a future `/us`.
+   */
+  readonly currentCountry = computed<CountryOption>(() => {
+    const path = this.pathname();
+    const match = [...COUNTRIES]
+      .sort((a, b) => b.path.length - a.path.length)
+      .find((country) => path === country.path || path.startsWith(`${country.path}/`));
+    return match ?? COUNTRIES[0];
+  });
+
+  /** Country options with any per-locale label overrides applied. */
+  readonly countryOptions = computed<CountryOption[]>(() => {
+    const overrides = this.labelsState().countries;
+    if (!Object.keys(overrides).length) return COUNTRIES;
+    return COUNTRIES.map((country) => ({
+      ...country,
+      label: overrides[country.path] ?? country.label,
+    }));
+  });
+
+  /**
+   * Label for the currently selected country. A `country.<path>` override wins;
+   * otherwise the legacy flat `country` key applies, but only when a sheet
+   * actually supplied one - its default would otherwise mask the detected locale.
+   */
+  readonly currentCountryLabel = computed<string>(() => {
+    const current = this.currentCountry();
+    const labels = this.labelsState();
+    const override = labels.countries[current.path];
+    if (override) return override;
+    if (labels.country && labels.country !== DEFAULT_LABELS.country) return labels.country;
+    return current.label;
+  });
+
+  toggleCountryMenu(): void {
+    this.countryOpen.update((open) => !open);
+    if (this.countryOpen()) this.openSectionHref.set(null);
+  }
+
+  closeCountryMenu(): void {
+    this.countryOpen.set(false);
+  }
+
+  isCurrentCountry(country: CountryOption): boolean {
+    return country.path === this.currentCountry().path;
   }
 
   constructor() {
@@ -94,6 +159,7 @@ export class VwrHeaderComponent {
   }
 
   toggleSection(section: NavSection, event: Event): void {
+    this.closeCountryMenu();
     if (this.isDesktop.matches) {
       // Desktop: the top-level link opens/closes the mega menu instead of navigating.
       event.preventDefault();
@@ -112,15 +178,18 @@ export class VwrHeaderComponent {
   // Mirrors the real header's outside-click / focus-lost handling, simplified.
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
-    if (this.openSectionHref() === null) return;
+    if (this.openSectionHref() === null && !this.countryOpen()) return;
     if (!this.host.nativeElement.contains(event.target as Node)) {
       this.closeMegaMenu();
+      this.closeCountryMenu();
     }
   }
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
-    if (this.openSectionHref() !== null) {
+    if (this.countryOpen()) {
+      this.closeCountryMenu();
+    } else if (this.openSectionHref() !== null) {
       this.closeMegaMenu();
     } else if (this.mobileOpen()) {
       this.toggleMobileMenu();
